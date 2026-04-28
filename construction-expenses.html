@@ -1,0 +1,869 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Site Ledger">
+<meta name="theme-color" content="#0d0f0a">
+<title>Site Ledger</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=Inconsolata:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0d0f0a;
+  --surface: #161810;
+  --surface2: #1e211a;
+  --border: #2a2d22;
+  --accent: #c9e05a;
+  --accent2: #e8a045;
+  --accent3: #5ac9b0;
+  --red: #e05a5a;
+  --text: #e8ead0;
+  --muted: #6b7055;
+  --r: 14px;
+}
+* { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+html { height: -webkit-fill-available; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Inconsolata', monospace;
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+  padding-bottom: env(safe-area-inset-bottom);
+  overflow-x: hidden;
+}
+
+/* ====== NAV TABS ====== */
+.nav-tabs {
+  position: sticky; top: 0; z-index: 50;
+  background: rgba(13,15,10,0.95);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  padding: 0 4px;
+}
+.nav-tab {
+  flex: 1; padding: 14px 4px;
+  background: none; border: none;
+  color: var(--muted);
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px; font-weight: 500;
+  text-transform: uppercase; letter-spacing: 1.2px;
+  cursor: pointer; transition: color 0.2s;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+}
+.nav-tab.active { color: var(--accent); border-bottom-color: var(--accent); }
+
+/* ====== HEADER ====== */
+.header {
+  padding: 20px 20px 16px;
+  background: linear-gradient(180deg, var(--surface) 0%, transparent 100%);
+}
+.site-title {
+  font-family: 'Syne', sans-serif;
+  font-size: 26px; font-weight: 800;
+  letter-spacing: -0.5px;
+  line-height: 1;
+  margin-bottom: 2px;
+}
+.site-title span { color: var(--accent); }
+.site-sub { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 2px; }
+
+/* ====== PAGES ====== */
+.page { display: none; }
+.page.active { display: block; }
+
+/* ====== SUMMARY CARDS ====== */
+.cards {
+  padding: 0 16px 16px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 14px;
+  position: relative; overflow: hidden;
+}
+.card::after {
+  content:''; position:absolute;
+  top:0; left:0; right:0; height:2px;
+}
+.card.green::after { background: var(--accent); }
+.card.orange::after { background: var(--accent2); }
+.card.teal::after { background: var(--accent3); }
+.card.red::after { background: var(--red); }
+.card-label { font-size: 9px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 5px; }
+.card-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 18px; font-weight: 700; line-height: 1;
+}
+.card.green .card-val { color: var(--accent); }
+.card.orange .card-val { color: var(--accent2); }
+.card.teal .card-val { color: var(--accent3); }
+.card.red .card-val { color: var(--red); }
+.card-sub { font-size: 10px; color: var(--muted); margin-top: 3px; }
+
+/* ====== ADD BUTTON ====== */
+.add-wrap { padding: 0 16px 16px; }
+.add-btn {
+  width: 100%;
+  background: var(--accent); color: #0d0f0a;
+  border: none; border-radius: var(--r);
+  padding: 15px; cursor: pointer;
+  font-family: 'Syne', sans-serif;
+  font-size: 13px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  transition: all 0.15s;
+}
+.add-btn:active { transform: scale(0.98); opacity: 0.85; }
+
+/* ====== EXPENSE LIST ====== */
+.section-head {
+  padding: 8px 16px 8px;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.section-head-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; }
+
+.exp-list { padding: 0 16px 80px; display: flex; flex-direction: column; gap: 8px; }
+
+.exp-item {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 13px 14px;
+  display: flex; align-items: flex-start; gap: 10px;
+  animation: fadeUp 0.2s ease;
+  position: relative; overflow: hidden;
+  transition: transform 0.2s;
+}
+@keyframes fadeUp { from { opacity:0; transform:translateY(6px); } to { opacity:1; transform:none; } }
+
+.exp-cat-dot {
+  width: 8px; height: 8px; border-radius: 50%;
+  margin-top: 5px; flex-shrink: 0;
+}
+.exp-body { flex: 1; min-width: 0; }
+.exp-desc { font-size: 14px; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exp-meta { font-size: 10px; color: var(--muted); margin-top: 3px; display: flex; gap: 8px; flex-wrap: wrap; }
+.exp-cat-tag {
+  background: var(--surface2); border-radius: 4px;
+  padding: 1px 6px; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px;
+}
+.exp-right { text-align: right; flex-shrink: 0; }
+.exp-amount {
+  font-family: 'Syne', sans-serif;
+  font-size: 16px; font-weight: 700; color: var(--accent2);
+}
+.exp-del {
+  position: absolute; right: 0; top: 0; bottom: 0; width: 64px;
+  background: #3a1010; border: none; color: var(--red);
+  font-size: 16px; cursor: pointer;
+  transform: translateX(100%); transition: transform 0.2s;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 0 var(--r) var(--r) 0;
+}
+.exp-item.swiped { transform: translateX(-64px); border-radius: var(--r) 0 0 var(--r); }
+.exp-item.swiped .exp-del { transform: translateX(0); }
+
+.empty {
+  text-align: center; padding: 50px 20px; color: var(--muted);
+}
+.empty .ico { font-size: 44px; margin-bottom: 10px; }
+.empty p { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; }
+
+/* ====== FILTER PAGE ====== */
+.filter-wrap { padding: 16px; }
+.filter-section { margin-bottom: 20px; }
+.filter-title { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 10px; }
+
+.filter-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: 8px; padding: 7px 12px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.chip.active { border-color: var(--accent); color: var(--accent); background: rgba(201,224,90,0.08); }
+.chip:active { transform: scale(0.95); }
+
+.filter-result {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  padding: 16px; margin-bottom: 16px;
+}
+.filter-total-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.filter-total-val {
+  font-family: 'Syne', sans-serif;
+  font-size: 32px; font-weight: 800; color: var(--accent);
+  line-height: 1; margin-bottom: 4px;
+}
+.filter-total-sub { font-size: 11px; color: var(--muted); }
+
+.filter-list { display: flex; flex-direction: column; gap: 8px; padding-bottom: 80px; }
+
+/* ====== CATEGORIES PAGE ====== */
+.cat-page { padding: 16px; padding-bottom: 80px; }
+.cat-group {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.cat-group-head {
+  padding: 13px 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  border-bottom: 1px solid var(--border);
+}
+.cat-group-name {
+  font-family: 'Syne', sans-serif;
+  font-size: 14px; font-weight: 700;
+  display: flex; align-items: center; gap: 8px;
+}
+.cat-dot { width: 8px; height: 8px; border-radius: 50%; }
+.cat-group-total { font-size: 13px; color: var(--accent2); font-weight: 500; }
+
+.subcat-list { padding: 6px 0; }
+.subcat-row {
+  padding: 8px 16px 8px 32px;
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 12px;
+}
+.subcat-name { color: var(--muted); }
+.subcat-total { color: var(--text); font-weight: 500; }
+
+.add-custom-wrap { margin-bottom: 12px; }
+.add-custom-btn {
+  width: 100%;
+  background: var(--surface2); color: var(--accent3);
+  border: 1px dashed var(--border);
+  border-radius: var(--r); padding: 13px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 12px; text-transform: uppercase; letter-spacing: 1px;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.add-custom-btn:active { opacity: 0.7; }
+
+/* ====== BOTTOM SHEET ====== */
+.overlay {
+  position: fixed; inset: 0; z-index: 200;
+  background: rgba(0,0,0,0.75);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  opacity: 0; pointer-events: none; transition: opacity 0.25s;
+}
+.overlay.open { opacity: 1; pointer-events: all; }
+
+.sheet {
+  position: fixed; bottom: 0; left: 0; right: 0; z-index: 201;
+  background: var(--surface);
+  border-radius: 22px 22px 0 0;
+  border-top: 1px solid var(--border);
+  padding: 0 18px calc(20px + env(safe-area-inset-bottom));
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32,0.72,0,1);
+  max-height: 92vh; overflow-y: auto;
+}
+.sheet.open { transform: translateY(0); }
+.sheet-handle { width: 36px; height: 4px; background: var(--border); border-radius: 2px; margin: 12px auto 18px; }
+.sheet-title { font-family: 'Syne', sans-serif; font-size: 18px; font-weight: 700; margin-bottom: 18px; }
+
+.field { margin-bottom: 14px; }
+.field label { display: block; font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 1.5px; margin-bottom: 6px; }
+.field input, .field select, .field textarea {
+  width: 100%;
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 13px 14px;
+  color: var(--text); font-family: 'Inconsolata', monospace;
+  font-size: 15px; outline: none; transition: border-color 0.15s;
+  appearance: none; -webkit-appearance: none;
+}
+.field input:focus, .field select:focus { border-color: var(--accent); }
+.field input.err { border-color: var(--red); }
+.field input[type=number]::-webkit-inner-spin-button { display: none; }
+
+.cat-select-grid { display: flex; flex-direction: column; gap: 8px; }
+.cat-option {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; padding: 11px 14px;
+  cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; gap: 10px;
+}
+.cat-option.active { border-color: var(--accent); background: rgba(201,224,90,0.06); }
+.cat-option-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+.cat-option-name { font-size: 13px; font-weight: 500; }
+.cat-option-subs { margin-left: auto; font-size: 10px; color: var(--muted); }
+
+.subcat-select-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.subcat-btn {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 12px;
+  font-family: 'Inconsolata', monospace;
+  font-size: 11px; color: var(--muted);
+  cursor: pointer; transition: all 0.15s;
+  text-transform: uppercase; letter-spacing: 0.5px;
+}
+.subcat-btn.active { border-color: var(--accent3); color: var(--accent3); background: rgba(90,201,176,0.07); }
+
+.sheet-actions { display: grid; grid-template-columns: 1fr 2fr; gap: 10px; margin-top: 18px; }
+.btn-cancel {
+  background: var(--bg); border: 1px solid var(--border);
+  border-radius: 10px; color: var(--muted);
+  font-family: 'Inconsolata', monospace; font-size: 13px;
+  padding: 15px; cursor: pointer; transition: all 0.15s;
+}
+.btn-save {
+  background: var(--accent); color: #0d0f0a;
+  border: none; border-radius: 10px;
+  font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase;
+  padding: 15px; cursor: pointer; transition: all 0.15s;
+}
+.btn-cancel:active, .btn-save:active { transform: scale(0.97); }
+
+.divider { height: 1px; background: var(--border); margin: 14px 0; }
+</style>
+</head>
+<body>
+
+<div class="nav-tabs">
+  <button class="nav-tab active" onclick="showPage('home')">Home</button>
+  <button class="nav-tab" onclick="showPage('filter')">Filter</button>
+  <button class="nav-tab" onclick="showPage('cats')">Categories</button>
+</div>
+
+<!-- ===== HOME PAGE ===== -->
+<div class="page active" id="page-home">
+  <div class="header">
+    <div class="site-title">Site <span>Ledger</span></div>
+    <div class="site-sub">Construction Expense Tracker</div>
+  </div>
+
+  <div class="cards">
+    <div class="card green">
+      <div class="card-label">Total Spent</div>
+      <div class="card-val" id="totalVal">Rs 0</div>
+      <div class="card-sub" id="totalCount">0 entries</div>
+    </div>
+    <div class="card orange">
+      <div class="card-label">This Month</div>
+      <div class="card-val" id="monthVal">Rs 0</div>
+      <div class="card-sub" id="monthCount">0 entries</div>
+    </div>
+    <div class="card teal">
+      <div class="card-label">Top Category</div>
+      <div class="card-val" id="topCatVal" style="font-size:13px">—</div>
+      <div class="card-sub" id="topCatAmt">—</div>
+    </div>
+    <div class="card red">
+      <div class="card-label">Latest Entry</div>
+      <div class="card-val" id="latestVal" style="font-size:13px">—</div>
+      <div class="card-sub" id="latestDate">—</div>
+    </div>
+  </div>
+
+  <div class="add-wrap">
+    <button class="add-btn" onclick="openSheet()">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+      Add Expense
+    </button>
+  </div>
+
+  <div class="section-head">
+    <span class="section-head-label">All Entries</span>
+    <span class="section-head-label" id="homeCount"></span>
+  </div>
+  <div class="exp-list" id="homeList"></div>
+</div>
+
+<!-- ===== FILTER PAGE ===== -->
+<div class="page" id="page-filter">
+  <div class="filter-wrap">
+    <div class="filter-section">
+      <div class="filter-title">Filter by Category</div>
+      <div class="filter-chips" id="filterCatChips"></div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title">Filter by Sub-Category</div>
+      <div class="filter-chips" id="filterSubChips"></div>
+    </div>
+    <div class="filter-section">
+      <div class="filter-title">Filter by Date Range</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="field" style="margin:0">
+          <label>From</label>
+          <input type="date" id="dateFrom">
+        </div>
+        <div class="field" style="margin:0">
+          <label>To</label>
+          <input type="date" id="dateTo">
+        </div>
+      </div>
+    </div>
+    <button class="add-btn" onclick="applyFilter()" style="margin-bottom:16px">Apply Filter</button>
+    <button class="btn-cancel" onclick="clearFilter()" style="width:100%;margin-bottom:16px">Clear Filter</button>
+
+    <div class="filter-result" id="filterResult" style="display:none">
+      <div class="filter-total-label">Filtered Total</div>
+      <div class="filter-total-val" id="filterTotal">Rs 0</div>
+      <div class="filter-total-sub" id="filterSub"></div>
+    </div>
+
+    <div class="filter-list" id="filterList"></div>
+  </div>
+</div>
+
+<!-- ===== CATEGORIES PAGE ===== -->
+<div class="page" id="page-cats">
+  <div class="cat-page" id="catPage">
+    <div class="add-custom-wrap">
+      <button class="add-custom-btn" onclick="openAddCatSheet()">
+        ＋ Add Category / Sub-category
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===== OVERLAY + SHEET ===== -->
+<div class="overlay" id="overlay" onclick="closeSheet()"></div>
+<div class="sheet" id="sheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title" id="sheetTitle">New Expense</div>
+
+  <div class="field">
+    <label>Amount (Rs)</label>
+    <input type="number" id="amtInput" placeholder="0" inputmode="decimal" step="1">
+  </div>
+  <div class="field">
+    <label>Description</label>
+    <input type="text" id="descInput" placeholder="What was this for?">
+  </div>
+  <div class="field">
+    <label>Category</label>
+    <div class="cat-select-grid" id="catSelectGrid"></div>
+  </div>
+  <div class="field" id="subcatField" style="display:none">
+    <label>Sub-category</label>
+    <div class="subcat-select-grid" id="subcatSelectGrid"></div>
+  </div>
+  <div class="field">
+    <label>Date</label>
+    <input type="date" id="dateInput">
+  </div>
+  <div class="field">
+    <label>Notes (optional)</label>
+    <input type="text" id="notesInput" placeholder="Any extra details...">
+  </div>
+
+  <div class="sheet-actions">
+    <button class="btn-cancel" onclick="closeSheet()">Cancel</button>
+    <button class="btn-save" onclick="saveExpense()">Save</button>
+  </div>
+</div>
+
+<!-- ADD CATEGORY SHEET -->
+<div class="overlay" id="catOverlay" onclick="closeCatSheet()"></div>
+<div class="sheet" id="catSheet">
+  <div class="sheet-handle"></div>
+  <div class="sheet-title">Add Category</div>
+
+  <div class="field">
+    <label>Category Name</label>
+    <input type="text" id="newCatName" placeholder="e.g. Tiles, Roofing...">
+  </div>
+  <div class="field">
+    <label>Color</label>
+    <div id="colorPicker" style="display:flex;gap:8px;flex-wrap:wrap"></div>
+  </div>
+
+  <div class="divider"></div>
+  <div style="font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:10px">
+    Or add Sub-category to existing
+  </div>
+  <div class="field">
+    <label>Parent Category</label>
+    <select id="parentCatSel">
+      <option value="">— select —</option>
+    </select>
+  </div>
+  <div class="field">
+    <label>Sub-category Name</label>
+    <input type="text" id="newSubName" placeholder="e.g. Bricks, Paint...">
+  </div>
+
+  <div class="sheet-actions">
+    <button class="btn-cancel" onclick="closeCatSheet()">Cancel</button>
+    <button class="btn-save" onclick="saveCustomCat()">Save</button>
+  </div>
+</div>
+
+<script>
+// ===== DATA =====
+const COLORS = ['#c9e05a','#e8a045','#5ac9b0','#e05a5a','#a45ae0','#5a8ae0','#e05ab4','#e0c15a'];
+
+let categories = JSON.parse(localStorage.getItem('sl_cats') || 'null') || [
+  { id:'grey_structure', name:'Grey Structure', color:'#c9e05a', subs:['Grey Material','Plumbing Material','Electrical Material'] },
+  { id:'finishes',       name:'Finishes',        color:'#e8a045', subs:[] },
+  { id:'grey_labour',    name:'Grey Contractor Labour', color:'#5ac9b0', subs:[] },
+  { id:'plumb_labour',   name:'Plumbing Contractor Labour', color:'#a45ae0', subs:[] },
+  { id:'elec_labour',    name:'Electrical Contractor Labour', color:'#e05a5a', subs:[] },
+];
+
+let expenses = JSON.parse(localStorage.getItem('sl_exp') || '[]');
+
+let selectedCat = null;
+let selectedSub = null;
+let selectedColor = COLORS[0];
+let swipedItem = null;
+let editId = null;
+
+// active filters
+let fCats = [];
+let fSubs = [];
+
+function save() {
+  localStorage.setItem('sl_cats', JSON.stringify(categories));
+  localStorage.setItem('sl_exp', JSON.stringify(expenses));
+}
+
+// ===== FORMAT =====
+function fmt(n) {
+  return 'Rs ' + Math.round(n).toLocaleString('en-PK');
+}
+function fmtDate(s) {
+  const [y,m,d] = s.split('-');
+  const mn = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  return `${mn[+m-1]} ${+d}, ${y}`;
+}
+
+// ===== NAV =====
+function showPage(p) {
+  document.querySelectorAll('.page').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+  document.getElementById('page-'+p).classList.add('active');
+  document.querySelectorAll('.nav-tab').forEach((t,i) => {
+    if(['home','filter','cats'][i]===p) t.classList.add('active');
+  });
+  if(p==='filter') renderFilterPage();
+  if(p==='cats') renderCatsPage();
+}
+
+// ===== RENDER HOME =====
+function renderHome() {
+  const total = expenses.reduce((s,e) => s+e.amount, 0);
+  const now = new Date(); const mk = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}`;
+  const monthExp = expenses.filter(e => e.date.startsWith(mk));
+  const monthTotal = monthExp.reduce((s,e) => s+e.amount, 0);
+
+  // top cat
+  const catTotals = {};
+  expenses.forEach(e => { catTotals[e.catId] = (catTotals[e.catId]||0)+e.amount; });
+  const topCatId = Object.keys(catTotals).sort((a,b)=>catTotals[b]-catTotals[a])[0];
+  const topCat = categories.find(c=>c.id===topCatId);
+
+  // latest
+  const sorted = [...expenses].sort((a,b)=>b.date.localeCompare(a.date));
+
+  document.getElementById('totalVal').textContent = fmt(total);
+  document.getElementById('totalCount').textContent = expenses.length+' entries';
+  document.getElementById('monthVal').textContent = fmt(monthTotal);
+  document.getElementById('monthCount').textContent = monthExp.length+' entries';
+  document.getElementById('topCatVal').textContent = topCat ? topCat.name : '—';
+  document.getElementById('topCatAmt').textContent = topCat ? fmt(catTotals[topCatId]) : '—';
+  document.getElementById('latestVal').textContent = sorted[0] ? sorted[0].desc : '—';
+  document.getElementById('latestDate').textContent = sorted[0] ? fmtDate(sorted[0].date) : '—';
+  document.getElementById('homeCount').textContent = expenses.length ? expenses.length+' items' : '';
+
+  const el = document.getElementById('homeList');
+  if(!expenses.length) {
+    el.innerHTML = `<div class="empty"><div class="ico">🏗️</div><p>No expenses yet</p></div>`;
+    return;
+  }
+
+  el.innerHTML = sorted.map(e => {
+    const cat = categories.find(c=>c.id===e.catId);
+    return expItemHTML(e, cat);
+  }).join('');
+}
+
+function expItemHTML(e, cat) {
+  const color = cat ? cat.color : '#888';
+  return `
+  <div class="exp-item" id="ei-${e.id}"
+    ontouchstart="ts(event,'${e.id}')" ontouchmove="tm(event,'${e.id}')" ontouchend="te(event,'${e.id}')">
+    <div class="exp-cat-dot" style="background:${color}"></div>
+    <div class="exp-body">
+      <div class="exp-desc">${e.desc}</div>
+      <div class="exp-meta">
+        <span class="exp-cat-tag" style="color:${color}">${cat?cat.name:'—'}</span>
+        ${e.sub ? `<span class="exp-cat-tag">${e.sub}</span>` : ''}
+        <span>${fmtDate(e.date)}</span>
+        ${e.notes ? `<span style="color:var(--muted)">${e.notes}</span>` : ''}
+      </div>
+    </div>
+    <div class="exp-right">
+      <div class="exp-amount">${fmt(e.amount)}</div>
+    </div>
+    <button class="exp-del" onclick="delExp('${e.id}')">✕</button>
+  </div>`;
+}
+
+// ===== SWIPE =====
+let txStart = 0;
+function ts(e,id) {
+  txStart = e.touches[0].clientX;
+  if(swipedItem && swipedItem!==id) {
+    document.getElementById('ei-'+swipedItem)?.classList.remove('swiped');
+    swipedItem=null;
+  }
+}
+function tm(e,id) {
+  const dx = e.touches[0].clientX - txStart;
+  if(dx < -40) { document.getElementById('ei-'+id)?.classList.add('swiped'); swipedItem=id; }
+  else if(dx > 10) { document.getElementById('ei-'+id)?.classList.remove('swiped'); swipedItem=null; }
+}
+function te(){}
+
+function delExp(id) {
+  expenses = expenses.filter(e=>e.id!==id);
+  save(); renderHome();
+}
+
+// ===== ADD EXPENSE SHEET =====
+function openSheet() {
+  editId = null;
+  selectedCat = null; selectedSub = null;
+  document.getElementById('sheetTitle').textContent = 'New Expense';
+  document.getElementById('amtInput').value = '';
+  document.getElementById('descInput').value = '';
+  document.getElementById('notesInput').value = '';
+  document.getElementById('dateInput').value = new Date().toISOString().split('T')[0];
+  document.getElementById('amtInput').classList.remove('err');
+  document.getElementById('descInput').classList.remove('err');
+  renderCatSelectGrid();
+  document.getElementById('subcatField').style.display = 'none';
+  document.getElementById('overlay').classList.add('open');
+  document.getElementById('sheet').classList.add('open');
+  setTimeout(()=>document.getElementById('amtInput').focus(),300);
+}
+
+function closeSheet() {
+  document.getElementById('overlay').classList.remove('open');
+  document.getElementById('sheet').classList.remove('open');
+}
+
+function renderCatSelectGrid() {
+  document.getElementById('catSelectGrid').innerHTML = categories.map(c=>`
+    <div class="cat-option ${selectedCat===c.id?'active':''}" onclick="selectCat('${c.id}')">
+      <div class="cat-option-dot" style="background:${c.color}"></div>
+      <div class="cat-option-name">${c.name}</div>
+      ${c.subs.length ? `<div class="cat-option-subs">${c.subs.length} subs</div>` : ''}
+    </div>`).join('');
+}
+
+function selectCat(id) {
+  selectedCat = id; selectedSub = null;
+  renderCatSelectGrid();
+  const cat = categories.find(c=>c.id===id);
+  if(cat && cat.subs.length) {
+    document.getElementById('subcatField').style.display = 'block';
+    document.getElementById('subcatSelectGrid').innerHTML = cat.subs.map(s=>`
+      <button class="subcat-btn ${selectedSub===s?'active':''}" onclick="selectSub('${s}')">${s}</button>`).join('');
+  } else {
+    document.getElementById('subcatField').style.display = 'none';
+  }
+}
+
+function selectSub(s) {
+  selectedSub = s;
+  document.querySelectorAll('.subcat-btn').forEach(b=>{
+    b.classList.toggle('active', b.textContent===s);
+  });
+}
+
+function saveExpense() {
+  const amt = parseFloat(document.getElementById('amtInput').value);
+  const desc = document.getElementById('descInput').value.trim();
+  const date = document.getElementById('dateInput').value;
+  const notes = document.getElementById('notesInput').value.trim();
+  let ok = true;
+  if(!amt||amt<=0) { document.getElementById('amtInput').classList.add('err'); ok=false; }
+  else document.getElementById('amtInput').classList.remove('err');
+  if(!desc) { document.getElementById('descInput').classList.add('err'); ok=false; }
+  else document.getElementById('descInput').classList.remove('err');
+  if(!selectedCat||!date) { ok=false; }
+  if(!ok) return;
+
+  expenses.push({ id:Date.now().toString(), amount:amt, desc, catId:selectedCat, sub:selectedSub||'', date, notes });
+  save(); closeSheet(); renderHome();
+}
+
+// ===== FILTER PAGE =====
+function renderFilterPage() {
+  // cat chips
+  document.getElementById('filterCatChips').innerHTML = categories.map(c=>`
+    <div class="chip ${fCats.includes(c.id)?'active':''}" onclick="toggleFCat('${c.id}')" style="${fCats.includes(c.id)?`border-color:${c.color};color:${c.color}`:''}">
+      ${c.name}
+    </div>`).join('');
+
+  // sub chips from selected cats or all
+  const activeCats = fCats.length ? categories.filter(c=>fCats.includes(c.id)) : categories;
+  const allSubs = [...new Set(activeCats.flatMap(c=>c.subs))];
+  document.getElementById('filterSubChips').innerHTML = allSubs.map(s=>`
+    <div class="chip ${fSubs.includes(s)?'active':''}" onclick="toggleFSub('${s}')">${s}</div>`).join('');
+}
+
+function toggleFCat(id) {
+  fCats = fCats.includes(id) ? fCats.filter(x=>x!==id) : [...fCats,id];
+  renderFilterPage();
+}
+function toggleFSub(s) {
+  fSubs = fSubs.includes(s) ? fSubs.filter(x=>x!==s) : [...fSubs,s];
+  renderFilterPage();
+}
+
+function applyFilter() {
+  let res = [...expenses];
+  if(fCats.length) res = res.filter(e=>fCats.includes(e.catId));
+  if(fSubs.length) res = res.filter(e=>fSubs.includes(e.sub));
+  const from = document.getElementById('dateFrom').value;
+  const to = document.getElementById('dateTo').value;
+  if(from) res = res.filter(e=>e.date>=from);
+  if(to)   res = res.filter(e=>e.date<=to);
+  res.sort((a,b)=>b.date.localeCompare(a.date));
+
+  const total = res.reduce((s,e)=>s+e.amount,0);
+  document.getElementById('filterResult').style.display = 'block';
+  document.getElementById('filterTotal').textContent = fmt(total);
+  document.getElementById('filterSub').textContent = `${res.length} entries`;
+
+  document.getElementById('filterList').innerHTML = res.length
+    ? res.map(e=>expItemHTML(e, categories.find(c=>c.id===e.catId))).join('')
+    : `<div class="empty"><div class="ico">🔍</div><p>No matching entries</p></div>`;
+}
+
+function clearFilter() {
+  fCats=[]; fSubs=[];
+  document.getElementById('dateFrom').value='';
+  document.getElementById('dateTo').value='';
+  document.getElementById('filterResult').style.display='none';
+  document.getElementById('filterList').innerHTML='';
+  renderFilterPage();
+}
+
+// ===== CATEGORIES PAGE =====
+function renderCatsPage() {
+  const el = document.getElementById('catPage');
+  const catTotals = {};
+  const subTotals = {};
+  expenses.forEach(e=>{
+    catTotals[e.catId]=(catTotals[e.catId]||0)+e.amount;
+    if(e.sub) {
+      const key = e.catId+'|'+e.sub;
+      subTotals[key]=(subTotals[key]||0)+e.amount;
+    }
+  });
+
+  const html = categories.map(c=>{
+    const tot = catTotals[c.id]||0;
+    const subsHtml = c.subs.map(s=>{
+      const st = subTotals[c.id+'|'+s]||0;
+      return `<div class="subcat-row"><span class="subcat-name">↳ ${s}</span><span class="subcat-total">${fmt(st)}</span></div>`;
+    }).join('');
+    return `
+    <div class="cat-group">
+      <div class="cat-group-head">
+        <div class="cat-group-name"><div class="cat-dot" style="background:${c.color}"></div>${c.name}</div>
+        <div class="cat-group-total">${fmt(tot)}</div>
+      </div>
+      ${c.subs.length ? `<div class="subcat-list">${subsHtml}</div>` : ''}
+    </div>`;
+  }).join('');
+
+  el.innerHTML = `
+    <div class="add-custom-wrap">
+      <button class="add-custom-btn" onclick="openAddCatSheet()">＋ Add Category / Sub-category</button>
+    </div>
+    ${html}`;
+}
+
+// ===== ADD CATEGORY SHEET =====
+function openAddCatSheet() {
+  document.getElementById('newCatName').value='';
+  document.getElementById('newSubName').value='';
+  selectedColor = COLORS[0];
+
+  document.getElementById('colorPicker').innerHTML = COLORS.map(c=>`
+    <div onclick="selectColor('${c}')" style="width:28px;height:28px;border-radius:50%;background:${c};cursor:pointer;border:2px solid ${c===selectedColor?'#fff':'transparent'};transition:all 0.15s" id="cp-${c.replace('#','')}"></div>`
+  ).join('');
+
+  // parent cat select
+  document.getElementById('parentCatSel').innerHTML =
+    `<option value="">— select —</option>` +
+    categories.map(c=>`<option value="${c.id}">${c.name}</option>`).join('');
+
+  document.getElementById('catOverlay').classList.add('open');
+  document.getElementById('catSheet').classList.add('open');
+}
+
+function closeCatSheet() {
+  document.getElementById('catOverlay').classList.remove('open');
+  document.getElementById('catSheet').classList.remove('open');
+}
+
+function selectColor(c) {
+  selectedColor = c;
+  document.querySelectorAll('#colorPicker > div').forEach(d => {
+    d.style.border = `2px solid ${d.style.background===c?'#fff':'transparent'}`;
+  });
+}
+
+function saveCustomCat() {
+  const catName = document.getElementById('newCatName').value.trim();
+  const parentId = document.getElementById('parentCatSel').value;
+  const subName = document.getElementById('newSubName').value.trim();
+
+  if(catName) {
+    // New top-level category
+    const id = catName.toLowerCase().replace(/\s+/g,'_')+'_'+Date.now();
+    categories.push({ id, name:catName, color:selectedColor, subs:[] });
+    save(); closeCatSheet(); renderCatsPage(); renderHome();
+    return;
+  }
+
+  if(parentId && subName) {
+    const cat = categories.find(c=>c.id===parentId);
+    if(cat && !cat.subs.includes(subName)) {
+      cat.subs.push(subName);
+      save(); closeCatSheet(); renderCatsPage(); renderHome();
+      return;
+    }
+  }
+
+  // highlight missing
+  if(!catName && !parentId) document.getElementById('newCatName').classList.add('err');
+}
+
+// ===== SERVICE WORKER =====
+if('serviceWorker' in navigator) {
+  const sw=`self.addEventListener('install',e=>self.skipWaiting());self.addEventListener('activate',e=>clients.claim());self.addEventListener('fetch',e=>{e.respondWith(caches.match(e.request).then(r=>r||fetch(e.request)));});`;
+  navigator.serviceWorker.register(URL.createObjectURL(new Blob([sw],{type:'application/javascript'})));
+}
+
+// ===== INIT =====
+renderHome();
+</script>
+</body>
+</html>
